@@ -1,0 +1,757 @@
+---
+title: "AI Impact on Jobs 2030"
+author: "Muhammad Haseeb Ul Hassan"
+date: "Spring 2026"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    latex_engine: pdflatex
+header-includes:
+  - \usepackage{xcolor}
+  - \usepackage{fancyhdr}
+  - \usepackage{geometry}
+  - \geometry{margin=1in}
+  - \definecolor{fccu}{RGB}{128,0,32}
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyhead[L]{\textcolor{fccu}{\small STAT 206 -- Introduction to Data Analytics}}
+  - \fancyhead[R]{\textcolor{fccu}{\small Muhammad Haseeb Ul Hassan}}
+  - \fancyfoot[C]{\thepage}
+  - \renewcommand{\headrulewidth}{1pt}
+---
+
+```{r setup, include=FALSE}
+# Global options for all chunks
+# echo = TRUE    -> show code in output
+# warning = FALSE -> hide warnings
+# message = FALSE -> hide messages
+# comment = ""   -> no ## before output lines
+knitr::opts_chunk$set(
+  echo      = TRUE,
+  warning   = FALSE,
+  message   = FALSE,
+  fig.align = "center",
+  fig.width  = 5.5,
+  fig.height = 3.8,
+  comment   = "",
+  tidy      = FALSE
+)
+```
+
+\newpage
+
+\begin{center}
+
+{\LARGE \textbf{\textcolor{fccu}{AI Impact on Jobs 2030}}}
+
+\vspace{0.5cm}
+
+{\large STAT 206 -- Introduction to Data Analytics}
+
+\vspace{0.5cm}
+
+{\large \textbf{Muhammad Haseeb Ul Hassan}}
+
+\vspace{0.2cm}
+
+STAT-206 (Section A)
+
+Department of Statistics
+
+Forman Christian College (A Chartered University)
+
+Spring 2026
+
+Instructor: Dr. Shakila Bashir
+
+\end{center}
+
+\newpage
+
+# 1. Introduction and Problem Description
+
+## 1.1 Background
+
+Artificial intelligence (AI) is changing the way people work. Many jobs that exist today may be replaced by machines by the year 2030. This project looks at a real dataset about how AI is affecting different types of jobs, salaries, and the risk of automation.
+
+Understanding which jobs are at risk and how salary relates to experience or education is useful for students, workers, and employers.
+
+## 1.2 Dataset Source
+
+The dataset is taken from Kaggle: **AI Impact on Jobs 2030** by Yadav, K. (2024).
+It contains 3000 observations and 18 variables. For this project, we use the first 100 observations and 7 selected variables relevant to our objectives.
+
+## 1.3 Objectives
+
+The main objectives of this project are:
+
+- To explore the distribution of salary, AI exposure, and automation risk
+- To compare salaries across different groups
+- To find correlations between numeric variables
+- To build a simple linear regression model to predict salary
+
+\newpage
+
+# 2. Data Import and Handling
+
+## 2.1 Load the Dataset
+
+```{r load-data}
+# Load ggplot2 for making graphs later
+library(ggplot2)
+
+data <- read.csv("AI_Impact_on_Jobs_2030.csv" , nrows = 100)
+
+# keep all rows and 7 columns 
+data <- data[, c("Job_Title", "Average_Salary", "Years_Experience",
+                 "Education_Level", "AI_Exposure_Index",
+                 "Automation_Probability_2030", "Risk_Category")]
+```
+
+## 2.2 R Objects and Vectors
+
+```{r vectors}
+
+# Numeric vector: salary values
+salary_vec <- data$Average_Salary
+length(salary_vec)        # number of elements
+class(salary_vec)         # data type
+
+# Numeric vector: years of experience
+exp_vec <- data$Years_Experience
+length(exp_vec)
+
+# Numeric vector: AI Exposure Index
+ai_vec <- data$AI_Exposure_Index
+
+# Character vector: job titles
+job_vec <- data$Job_Title
+head(job_vec, 5)          # first 5 job titles
+
+# Quick check: mean and range using the vectors directly
+round(mean(salary_vec), 2)
+range(exp_vec)
+```
+
+## 2.3 Explore the Data
+
+```{r explore}
+# number of rows
+nrow(data)
+
+# number of columns
+ncol(data)
+
+# first 6 rows
+head(data)
+
+# structure of data
+str(data, width = 60, strict.width = "cut")
+```
+
+## 2.4 Identify Variable Types
+
+```{r var-types}
+# factor() converts character columns into categorical variables
+# levels = c(...) sets the category order
+
+# Education_Level: ordinal variable (has a natural order)
+data$Education_Level <- factor(data$Education_Level,
+                               levels = c("High School",
+                                          "Bachelor's",
+                                          "Master's",
+                                          "PhD"))
+
+# Risk_Category: nominal variable
+data$Risk_Category <- factor(data$Risk_Category,
+                             levels = c("Low", "Medium", "High"))
+
+# Confirm the levels
+levels(data$Education_Level)
+levels(data$Risk_Category)
+
+# class() tells us the data type
+class(data$Education_Level)
+class(data$Risk_Category)
+```
+
+## 2.5 Handle Missing Values
+
+```{r missing}
+# colSums(is.na()) counts missing values per column
+colSums(is.na(data))
+
+# Total missing values in the whole dataset
+sum(is.na(data))
+# 0 means no missing values the dataset is clean
+```
+
+## 2.6 Basic R Functions
+
+```{r basic-functions}
+# summary() gives Min, Q1, Median, Mean, Q3, Max
+print(summary(data[, c("Average_Salary",
+                       "Years_Experience",
+                       "AI_Exposure_Index",
+                       "Automation_Probability_2030")]))
+
+# length() = number of observations
+length(data$Average_Salary)
+
+# class() = data type
+class(data$Average_Salary)
+
+# mean() = average salary
+round(mean(data$Average_Salary), 2)
+
+# sd() = standard deviation
+round(sd(data$Average_Salary), 2)
+```
+
+\newpage
+
+# 3. Descriptive Statistics
+
+## 3.1 Summary Statistics
+
+```{r descriptive-stats}
+# We loop through 4 numeric variables to calculate statistics
+# "v" holds the variable name in each loop cycle
+# We avoid naming it "var" to not conflict with R's var() function
+
+numeric_vars <- c("Average_Salary", "Years_Experience",
+                  "AI_Exposure_Index",
+                  "Automation_Probability_2030")
+
+for (v in numeric_vars) {
+
+  # data[[v]] extracts the column named v as a vector
+  x <- data[[v]]
+
+  cat("Variable:", v, "\n")
+  cat("  Mean     :", round(mean(x), 3), "\n")
+  cat("  Median   :", round(median(x), 3), "\n")
+  cat("  Std Dev  :", round(sd(x), 3), "\n")
+  cat("  Variance :", round(var(x), 3), "\n")
+  cat("  Min      :", round(min(x), 3), "\n")
+  cat("  Max      :", round(max(x), 3), "\n")
+  cat("  Range    :", round(max(x) - min(x), 3), "\n")
+  cat("  Q1       :", round(quantile(x, 0.25), 3), "\n")
+  cat("  Q3       :", round(quantile(x, 0.75), 3), "\n")
+  cat("  IQR      :", round(IQR(x), 3), "\n")
+  cat("  CV (%)   :", round(sd(x)/mean(x)*100, 2), "\n\n")
+}
+```
+
+## 3.2 Summary Table
+
+| Variable | Mean | Median | SD | Min | Max |
+|:---------|-----:|-------:|---:|----:|----:|
+| Avg Salary ($) | 86,807 | 87,576 | 34,989 | 30,060 | 148,721 |
+| Years Experience | 14.76 | 15.00 | 8.64 | 0 | 29 |
+| AI Exposure | 0.499 | 0.500 | 0.282 | 0.00 | 1.00 |
+| Automation Prob | 0.491 | 0.490 | 0.250 | 0.05 | 0.95 |
+
+## 3.3 Interpretation
+
+**Average Salary:** The mean salary is $86,807 and the median is $87,576. These two values are close to each other, which means the distribution is roughly symmetric with no strong skew. The standard deviation of $34,989 shows there is a wide range of salaries in the dataset.
+
+**Years of Experience:** The average experience is about 15 years. Values range from 0 to 29, covering all career stages from entry level to expert.
+
+**AI Exposure and Automation Probability:** Both variables average near 0.49 to 0.50, which means on average the jobs in this dataset have moderate AI involvement and automation risk.
+
+## 3.4 Frequency Tables
+
+```{r freq-tables}
+# table() counts observations in each category
+
+# Risk Category frequency table
+risk_table <- table(data$Risk_Category)
+print(risk_table)
+
+# Risk Category percentages
+round(prop.table(risk_table) * 100, 2)
+
+# Education Level frequency table
+edu_table <- table(data$Education_Level)
+print(edu_table)
+
+# Education Level percentages
+round(prop.table(edu_table) * 100, 2)
+```
+
+**Interpretation:** Medium risk is the most common category with 49 jobs (49%), followed by Low (26%) and High (25%). For education level, High School is the most common group (34%), followed by Master's (27%), PhD (22%), and Bachelor's (17%). The education groups are unequally distributed.
+
+\newpage
+
+# 4. Data Visualization
+
+## 4.1 Histogram (Base R): Average Salary
+
+```{r hist-salary, fig.cap="Histogram of Average Salary"}
+# hist() draws a histogram showing how salary values are distributed
+# breaks = 20 sets the number of bars
+hist(data$Average_Salary,
+     main   = "Distribution of Average Salary",
+     xlab   = "Average Salary ($)",
+     ylab   = "Frequency",
+     col    = "lightblue",
+     border = "white",
+     breaks = 20)
+
+# Add vertical lines for mean and median
+# lty = 2 means dashed line
+abline(v = mean(data$Average_Salary),
+       col = "red", lwd = 2, lty = 2)
+abline(v = median(data$Average_Salary),
+       col = "blue", lwd = 2, lty = 2)
+
+# Add legend to explain the lines
+legend("topright",
+       legend = c("Mean", "Median"),
+       col    = c("red", "blue"),
+       lty = 2, lwd = 2, bty = "n")
+```
+
+**Interpretation:** The salary distribution looks roughly uniform and symmetric across the range $30,000 to $150,000. The mean and median are both close to $88,000, confirming there is no strong skew in the data.
+
+## 4.2 Boxplot (Base R): Salary by Risk Category
+
+```{r boxplot-risk, fig.cap="Salary by Automation Risk Category"}
+# boxplot() with formula response ~ group draws one box per group
+# The box shows Q1, Median, Q3
+# Whiskers show the range and dots beyond are outliers
+boxplot(Average_Salary ~ Risk_Category,
+        data   = data,
+        main   = "Average Salary by Risk Category",
+        xlab   = "Risk Category",
+        ylab   = "Average Salary ($)",
+        col    = c("lightgreen", "lightyellow", "lightcoral"),
+        las    = 1)
+```
+
+**Interpretation:** The three risk categories have very similar median salaries and overlapping box ranges. This means that whether a job is Low, Medium, or High risk does not strongly separate the salary levels.
+
+## 4.3 Scatter Plot (ggplot2): Experience vs Salary
+
+```{r scatter-exp, fig.cap="Years of Experience vs Average Salary"}
+# ggplot() sets up the canvas
+# aes() maps variables to x and y axes
+ggplot(data, aes(x = Years_Experience,
+                 y = Average_Salary)) +
+
+  # geom_point() draws one dot per observation
+  # alpha = transparency, helps when many points overlap
+  geom_point(colour = "#800020", alpha = 0.4, size = 1.2) +
+
+  # geom_smooth(method="lm") draws a linear regression trend line
+  # se = TRUE adds a shaded confidence band around the line
+  geom_smooth(method = "lm", colour = "navy",
+              se = TRUE, linewidth = 1) +
+
+  labs(title = "Years of Experience vs Average Salary",
+       x     = "Years of Experience",
+       y     = "Average Salary ($)") +
+
+  theme_classic()
+```
+
+**Interpretation:** The regression line is nearly flat, which shows that years of experience has a very weak relationship with salary. The points are scattered without any clear pattern.
+
+## 4.4 Bar Chart (ggplot2): Education Level
+
+```{r bar-edu, fig.cap="Distribution of Education Levels"}
+# Convert frequency table to data frame for ggplot2
+edu_counts <- as.data.frame(table(data$Education_Level))
+colnames(edu_counts) <- c("Education_Level", "Count")
+
+# geom_bar(stat="identity") draws bars where height = Count
+ggplot(edu_counts,
+       aes(x = Education_Level, y = Count,
+           fill = Education_Level)) +
+
+  geom_bar(stat = "identity", show.legend = FALSE) +
+
+  scale_fill_manual(
+    values = c("#800020", "#b04060",
+               "#d08090", "#f0b0c0")) +
+
+  # geom_text() adds count labels above each bar
+  geom_text(aes(label = Count),
+            vjust = -0.3, size = 3.5) +
+
+  labs(title = "Distribution of Education Levels",
+       x     = "Education Level",
+       y     = "Count") +
+
+  theme_classic()
+```
+
+**Interpretation:** High School is the most common education group with 34 workers (34%), followed by Master's (27%), PhD (22%), and Bachelor's (17%). The groups are unequally distributed, which is important to consider when comparing salaries across education levels.
+
+## 4.5 Customised Visualization (ggplot2): AI Exposure vs Automation Probability
+
+This is the fifth and customised visualization, chosen to explore how AI Exposure Index and Automation Probability relate across the three Risk Categories using colour-coded groups and separate trend lines per group.
+
+```{r custom-plot, fig.cap="AI Exposure vs Automation Probability"}
+# colour = Risk_Category gives each group a different colour
+ggplot(data, aes(x = AI_Exposure_Index,
+                 y = Automation_Probability_2030,
+                 colour = Risk_Category)) +
+
+  geom_point(alpha = 0.3, size = 0.9) +
+
+  # separate trend line per risk group
+  geom_smooth(method = "lm", se = FALSE,
+              linewidth = 1.1) +
+
+  scale_colour_manual(
+    values = c("Low"    = "#2ecc71",
+               "Medium" = "#e67e22",
+               "High"   = "#800020")) +
+
+  labs(title  = "AI Exposure vs Automation Probability",
+       x      = "AI Exposure Index",
+       y      = "Automation Probability 2030",
+       colour = "Risk") +
+
+  theme_classic()
+```
+
+**Interpretation:** High risk jobs cluster at the top of the y-axis (high automation probability) and Low risk at the bottom. This confirms that Risk Category aligns logically with Automation Probability.
+
+\newpage
+
+# 5. Correlation Analysis
+
+## 5.1 Pearson Correlation
+
+```{r pearson-cor}
+# Select only the 4 numeric columns
+# cor() requires numeric input only
+numeric_data <- data[, c("Average_Salary",
+                         "Years_Experience",
+                         "AI_Exposure_Index",
+                         "Automation_Probability_2030")]
+
+# cor() computes all pairwise correlations
+# method = "pearson" measures linear relationship strength
+# Values: -1 = perfect negative, 0 = none, +1 = perfect positive
+round(cor(numeric_data, method = "pearson"), 4)
+```
+
+## 5.2 Spearman Correlation
+
+```{r spearman-cor}
+# Spearman uses ranks instead of raw values
+# Good when data might not be perfectly linear
+round(cor(numeric_data, method = "spearman"), 4)
+```
+
+## 5.3 Kendall Correlation
+
+```{r kendall-cor}
+# Kendall's tau is a rank-based correlation measure
+# More robust than Spearman for smaller samples
+round(cor(numeric_data, method = "kendall"), 4)
+```
+
+## 5.4 Significance Tests
+
+```{r cor-tests}
+# cor.test() checks if a correlation is statistically significant
+# H0: r = 0 (no correlation)
+# H1: r != 0 (some correlation exists)
+# If p-value < 0.05, the correlation is significant
+
+# Salary vs Years of Experience
+cor.test(data$Average_Salary, data$Years_Experience,
+         method = "pearson")
+
+# Salary vs AI Exposure
+cor.test(data$Average_Salary, data$AI_Exposure_Index,
+         method = "pearson")
+
+# Salary vs Automation Probability
+cor.test(data$Average_Salary,
+         data$Automation_Probability_2030,
+         method = "pearson")
+```
+
+## 5.5 Interpretation
+
+All three correlations with Average Salary are extremely weak (all |r| values are less than 0.11) and none have a p-value below 0.05. This means none of the three variables have a statistically significant linear relationship with salary. Salary in this dataset depends on many other factors not included here.
+
+\newpage
+
+# 6. Hypothesis Testing
+
+## 6.1 t-Test: Salary by Experience Group
+
+```{r ttest}
+# H0: Mean salary is equal for both experience groups
+# H1: Workers with more than 10 years earn higher salary
+# Alpha = 0.05
+
+# Split salary into two groups using logical indexing
+low_exp  <- data$Average_Salary[data$Years_Experience <= 10]
+high_exp <- data$Average_Salary[data$Years_Experience >  10]
+
+# Sample sizes
+length(low_exp)
+length(high_exp)
+
+# Group means
+round(mean(low_exp), 2)
+round(mean(high_exp), 2)
+
+# Welch two-sample t-test (does not assume equal variances)
+# alternative = "greater" means one-tailed test
+t_result <- t.test(high_exp, low_exp,
+                   alternative = "greater")
+print(t_result)
+
+# Decision
+if (t_result$p.value < 0.05) {
+  cat("Decision: Reject H0\n")
+} else {
+  cat("Decision: Fail to Reject H0\n")
+}
+```
+
+**Interpretation:** The p-value is greater than 0.05 so we fail to reject H0. There is no statistically significant difference in salary between the two experience groups at the 5% level.
+
+## 6.2 F-Test (ANOVA): Salary Across Education Levels
+
+```{r ftest}
+# H0: All four education group means are equal
+# H1: At least one group mean is different
+# Alpha = 0.05
+
+# tapply() calculates the mean salary per education group
+group_means <- tapply(data$Average_Salary,
+                      data$Education_Level, mean)
+round(group_means, 2)
+
+# aov() fits the one-way ANOVA model
+# The F-statistic = between-group variance / within-group variance
+anova_result <- aov(Average_Salary ~ Education_Level,
+                    data = data)
+print(summary(anova_result))
+
+# Extract p-value from the ANOVA summary table
+f_pval <- summary(anova_result)[[1]]$"Pr(>F)"[1]
+
+if (f_pval < 0.05) {
+  cat("Decision: Reject H0\n")
+} else {
+  cat("Decision: Fail to Reject H0\n")
+}
+```
+
+**Interpretation:** The F-test p-value is greater than 0.05. We fail to reject H0. There is no significant salary difference across the four education levels. Education level alone does not predict salary in this dataset.
+
+## 6.3 Chi-Square Test: Education vs Risk Category
+
+```{r chisq}
+# H0: Education Level and Risk Category are independent
+# H1: They are associated with each other
+# Alpha = 0.05
+
+# table() creates a contingency table showing counts
+# for every combination of Education Level and Risk Category
+cont_table <- table(data$Education_Level,
+                    data$Risk_Category)
+print(cont_table)
+
+# chisq.test() compares observed to expected frequencies
+chi_result <- chisq.test(cont_table)
+print(chi_result)
+
+if (chi_result$p.value < 0.05) {
+  cat("Decision: Reject H0\n")
+} else {
+  cat("Decision: Fail to Reject H0\n")
+}
+```
+
+**Interpretation:** The p-value is much greater than 0.05. We fail to reject H0. Education Level and Risk Category are independent of each other, meaning education level does not determine a worker's automation risk category.
+
+\newpage
+
+# 7. Simple Linear Regression
+
+## 7.1 Model Setup
+
+```{r slr-setup}
+# Simple Linear Regression model:
+# Y = b0 + b1 * X + error
+#
+# Y = Average_Salary      (response variable - what we predict)
+# X = Years_Experience    (predictor variable - what we use to predict)
+# b0 = intercept (salary when experience = 0)
+# b1 = slope (change in salary per year of experience)
+
+cat("Model: Average_Salary = b0 + b1 * Years_Experience\n")
+```
+
+## 7.2 Fit the Model
+
+```{r slr-model}
+# lm() fits the linear regression model
+# Formula: response ~ predictor
+slr_model <- lm(Average_Salary ~ Years_Experience,
+                data = data)
+
+# summary() gives coefficients, R-squared, F-statistic
+print(summary(slr_model))
+```
+
+## 7.3 Coefficients
+
+```{r slr-coefs}
+# coef() extracts the intercept and slope
+coef_vals <- coef(slr_model)
+
+cat("Intercept (b0) =", round(coef_vals[1], 2), "\n")
+cat("Slope (b1)     =", round(coef_vals[2], 4), "\n")
+
+# R-squared: how much of salary variation is explained by experience
+r2 <- summary(slr_model)$r.squared
+cat("R-squared      =", round(r2, 4), "\n")
+
+# Adjusted R-squared
+adj_r2 <- summary(slr_model)$adj.r.squared
+cat("Adj R-squared  =", round(adj_r2, 4), "\n")
+
+# Residual Standard Error = average prediction error in dollars
+cat("Residual SE    =", round(summary(slr_model)$sigma, 2),"\n")
+```
+
+## 7.4 Interpretation
+
+**Intercept (b0 = $93,155.33):** When experience is 0 years, the predicted salary is $93,155.
+
+**Slope (b1 = -$417.94):** For each additional year of experience, salary decreases by about $418. This negative slope is unexpected but it is not statistically significant (p > 0.05).
+
+**R-squared = 0.0114:** Experience explains only 1.14% of the variation in salary. This means the model has very low predictive power. Almost all salary variation is explained by other factors not in this model.
+
+## 7.5 Diagnostic Plots
+
+```{r slr-diagnostics, fig.cap="Regression Diagnostic Plots", fig.height=5}
+# par(mfrow = c(2,2)) arranges 4 plots in a 2x2 grid
+# These plots check if regression assumptions are met
+par(mfrow = c(2, 2))
+plot(slr_model)
+par(mfrow = c(1, 1))
+```
+
+All four diagnostic plots look acceptable. Residuals are randomly scattered (linearity OK), the Q-Q plot follows the diagonal (normality OK), and no extreme influential points are present.
+
+## 7.6 Regression Line Plot
+
+```{r slr-ggplot, fig.cap="Regression Line: Experience vs Salary"}
+ggplot(data, aes(x = Years_Experience,
+                 y = Average_Salary)) +
+
+  geom_point(colour = "#800020", alpha = 0.3,
+             size = 1.0) +
+
+  # Regression line with 95% confidence band
+  geom_smooth(method = "lm", colour = "navy",
+              se = TRUE, linewidth = 1.2,
+              fill = "lightblue", alpha = 0.3) +
+
+  labs(title = "Simple Linear Regression",
+       x     = "Years of Experience",
+       y     = "Average Salary ($)") +
+
+  theme_classic()
+```
+
+**Interpretation:** The line is nearly horizontal, confirming the weak negative slope. The wide confidence band shows high uncertainty in the predictions. The model is not useful for predicting salary from experience alone.
+
+## 7.7 Predictions
+
+```{r predictions}
+# Create new data with experience values to predict for
+# Column name must exactly match the predictor in lm()
+new_data <- data.frame(Years_Experience = c(2, 10, 20, 29))
+
+# predict() uses the fitted model to calculate predicted salaries
+# interval = "confidence" gives a 95% confidence interval
+preds <- predict(slr_model,
+                 newdata  = new_data,
+                 interval = "confidence",
+                 level    = 0.95)
+
+# Combine experience values with predictions
+result <- data.frame(
+  Experience = c(2, 10, 20, 29),
+  round(preds, 2)
+)
+colnames(result) <- c("Experience", "Predicted",
+                      "Lower CI", "Upper CI")
+print(result)
+```
+
+**Interpretation:** All predicted salaries are very similar regardless of experience level. This confirms the model essentially predicts the overall mean salary for every worker, which reflects the extremely low R-squared value.
+
+\newpage
+
+# 8. Conclusion
+
+## 8.1 Summary of Findings
+
+**Descriptive Statistics:** Average salary is $86,807 with a standard deviation of $34,989. AI Exposure and Automation Probability both average near 0.49. Medium risk is the most common category (49%).
+
+**Hypothesis Testing:**
+
+- t-Test: No significant salary difference between experience groups. Fail to reject H0.
+- ANOVA: No significant salary difference across education levels. Fail to reject H0.
+- Chi-Square: Education Level and Risk Category are independent. Fail to reject H0.
+
+**Correlation:** All correlations with salary are very weak (|r| < 0.10) and not statistically significant (p > 0.05).
+
+**Regression:** Salary = 93,155.33 - 417.94 x Experience. R-squared is only 0.0114, meaning experience explains only 1.14% of salary variation. The model is not significant overall.
+
+## 8.2 Practical Implications
+
+For workers, experience and education alone may not determine salary. Other factors like specific job skills, industry, and location likely matter more. For policymakers, since 22.9% of jobs are at high automation risk, there is a need for retraining programs to help affected workers.
+
+## 8.3 Limitations
+
+- The data is a snapshot and does not show change over time
+- Automation probabilities for 2030 are estimates, not actual outcomes
+- Important variables like location, industry, and specific skills are not included
+- The regression model explains less than 1% of salary variation
+
+## 8.4 Future Work
+
+- Include more variables like location, industry, and skills
+- Try multiple regression to improve prediction
+- Study how salary actually changes from 2024 to 2030
+
+\newpage
+
+# References
+
+Yadav, K. (2024). *AI Impact on Jobs 2030* [Dataset]. Kaggle.
+https://www.kaggle.com/datasets/khushikyad001/ai-impact-on-jobs-2030
+
+R Core Team (2024). *R: A Language and Environment for Statistical Computing*.
+R Foundation for Statistical Computing. https://www.R-project.org/
+
+Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis*. Springer-Verlag.
+
+\vspace{1cm}
+\begin{center}
+\textbf{\textcolor{fccu}{--- End of Report ---}}
+
+\vspace{0.3cm}
+{\small Muhammad Haseeb Ul Hassan | STAT-206 Section A | Spring 2026}
+
+{\small Instructor: Dr. Shakila Bashir}
+\end{center}
