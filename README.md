@@ -70,6 +70,8 @@ The honest headline finding of this project is a null result, and it's reported 
 └── README.md
 ```
 
+See the full [R Markdown source](ai_jobs_2030_analysis.Rmd), the [knitted PDF report](ai_jobs_2030_analysis.pdf), or the [presentation slides](docs/presentation.pdf).
+
 ## Tools
 
 R, ggplot2, base R statistical functions (`t.test`, `aov`, `chisq.test`, `lm`, `cor.test`), knitr and pdflatex for report generation.
@@ -82,8 +84,12 @@ R, ggplot2, base R statistical functions (`t.test`, `aov`, `chisq.test`, `lm`, `
 - With n = 100 split across 4 education levels and 3 risk categories, some subgroup cell sizes (e.g. Bachelor's at 17 observations) are small enough to limit the statistical power of the ANOVA and Chi-square tests to detect a real effect, even a moderate one
 - Only the first 100 of 3,000 available rows were used, per assignment scope
 
+## License
+
+This project is licensed under the [MIT License](LICENSE). The dataset itself remains the property of its original Kaggle uploader; see the Dataset section above for attribution.
+
 ## Author
 
-**Muhammad Haseeb Ul Hassan**   
-BSCS, Data Analytics & Mathematics Minors | Forman Christian College (A Chartered University)
+**Muhammad Haseeb Ul Hassan**  
+BSCS, Data Analytics & Mathematics Minors | Forman Christian College (A Chartered University)  
 [LinkedIn](https://www.linkedin.com/in/muhammad-haseeb-ul-hassan) · [GitHub](https://github.com/m-haseeb-ul-hassan)
